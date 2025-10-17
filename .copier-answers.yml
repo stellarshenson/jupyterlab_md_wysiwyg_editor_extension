@@ -1,0 +1,15 @@
+# Changes here will be overwritten by Copier; NEVER EDIT MANUALLY
+_commit: v4.4.0
+_src_path: https://github.com/jupyterlab/extension-template
+author_email: konrad.jelen+github@gmail.com
+author_name: Stellars Henson
+has_binder: false
+has_settings: false
+kind: frontend-and-server
+labextension_name: jupyterlab_md_wysiwyg_editor_extension
+project_short_description: Jupyterlab extension to allow WYSIWYG (What You See Is
+    What You Get) markdown editor
+python_name: jupyterlab_md_wysiwyg_editor_extension
+repository: ''
+test: true
+
