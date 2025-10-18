@@ -45,7 +45,7 @@ install_dependencies:
 
 ## cleanup all build and metabuild artefacts
 mrproper: clean uninstall
-	rm -rf node_modules .yarn || true
+	rm -rf node_modules .yarn tmp || true
 
 ## prints the list of available commands
 help:

@@ -1,6 +1,6 @@
 {
     "name": "jupyterlab_md_wysiwyg_editor_extension",
-    "version": "0.1.0",
+    "version": "0.1.2",
     "description": "Jupyterlab extension to allow WYSIWYG (What You See Is What You Get) markdown editor",
     "keywords": [
         "jupyter",
@@ -58,7 +58,11 @@
     "dependencies": {
         "@jupyterlab/application": "^4.0.0",
         "@jupyterlab/coreutils": "^6.0.0",
-        "@jupyterlab/services": "^7.0.0"
+        "@jupyterlab/services": "^7.0.0",
+        "@tiptap/core": "^3.7.2",
+        "@tiptap/pm": "^3.7.2",
+        "@tiptap/starter-kit": "^3.7.2",
+        "prosemirror-markdown": "^1.13.2"
     },
     "devDependencies": {
         "@jupyterlab/builder": "^4.0.0",
