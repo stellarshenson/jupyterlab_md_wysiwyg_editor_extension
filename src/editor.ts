@@ -1,136 +1,86 @@
 /**
- * TipTap editor wrapper for JupyterLab
+ * TOAST UI Editor wrapper for JupyterLab integration
  */
 
-import { Editor } from '@tiptap/core';
-import StarterKit from '@tiptap/starter-kit';
-import { defaultMarkdownSerializer } from 'prosemirror-markdown';
-import { ITipTapEditorWrapper, IEditorOptions } from './types';
+import Editor from '@toast-ui/editor';
+import '@toast-ui/editor/dist/toastui-editor.css';
+
+import { IToastEditorWrapper, IEditorOptions } from './types';
 
 /**
- * Wrapper class for TipTap editor with markdown support
+ * Wrapper class for TOAST UI Editor
+ *
+ * Key differences from TipTap:
+ * - TOAST UI manages its own layout and scrolling internally
+ * - Provides both WYSIWYG and Markdown modes
+ * - Has built-in toolbar (we hide it to avoid conflicts with Lumino)
  */
-export class TipTapEditorWrapper implements ITipTapEditorWrapper {
+export class ToastEditorWrapper implements IToastEditorWrapper {
   private _editor: Editor;
   private _onUpdate: (markdown: string) => void;
+  private _isDisposed = false;
 
   constructor(options: IEditorOptions) {
     this._onUpdate = options.onUpdate;
 
-    // Initialize TipTap editor with StarterKit extensions
+    // Create TOAST UI Editor instance
+    // Key: Use 'wysiwyg' initialEditType and hide mode switch
     this._editor = new Editor({
-      element: options.host,
-      extensions: [
-        StarterKit.configure({
-          // Configure heading levels
-          heading: {
-            levels: [1, 2, 3, 4, 5, 6]
-          },
-          // Enable code blocks with syntax highlighting support
-          codeBlock: {
-            HTMLAttributes: {
-              class: 'code-block'
-            }
-          },
-          // Enable blockquotes
-          blockquote: {},
-          // Enable horizontal rules
-          horizontalRule: {},
-          // Enable lists
-          bulletList: {},
-          orderedList: {},
-          listItem: {},
-          // Enable marks
-          bold: {},
-          italic: {},
-          strike: {},
-          code: {}
-        })
-      ],
-      content: this._markdownToHTML(options.content),
-      editable: true,
-      autofocus: true,
-      editorProps: {
-        attributes: {
-          class: 'markdown-editor-content',
-          spellcheck: 'true'
+      el: options.host,
+      height: '100%', // Let Lumino control the height
+      initialEditType: 'wysiwyg', // Start in WYSIWYG mode
+      initialValue: options.content,
+      previewStyle: 'vertical', // Split view (won't show in wysiwyg mode)
+      usageStatistics: false, // Disable analytics
+      hideModeSwitch: true, // Hide mode switcher (WYSIWYG only)
+      autofocus: false, // Let JupyterLab control focus
+      toolbarItems: [], // Hide default toolbar to avoid Lumino conflicts
+      events: {
+        change: () => {
+          if (!this._isDisposed) {
+            const markdown = this._editor.getMarkdown();
+            this._onUpdate(markdown);
+          }
         }
-      },
-      onUpdate: ({ editor }) => {
-        // Convert editor content to markdown and notify
-        const markdown = this.getMarkdown();
-        this._onUpdate(markdown);
       }
     });
   }
 
   /**
-   * Get the TipTap editor instance
+   * Get the TOAST UI editor instance
    */
   get editor(): Editor {
     return this._editor;
   }
 
   /**
-   * Convert markdown to HTML for TipTap initialization
-   * For now using a basic implementation - can be enhanced with markdown-it
-   */
-  private _markdownToHTML(markdown: string): string {
-    // Basic markdown to HTML conversion
-    // This is a simplified version - in production, use a proper markdown parser
-    let html = markdown;
-
-    // Headers
-    html = html.replace(/^### (.*$)/gim, '<h3>$1</h3>');
-    html = html.replace(/^## (.*$)/gim, '<h2>$1</h2>');
-    html = html.replace(/^# (.*$)/gim, '<h1>$1</h1>');
-
-    // Bold
-    html = html.replace(/\*\*(.*?)\*\*/gim, '<strong>$1</strong>');
-
-    // Italic
-    html = html.replace(/\*(.*?)\*/gim, '<em>$1</em>');
-
-    // Code
-    html = html.replace(/`(.*?)`/gim, '<code>$1</code>');
-
-    // Line breaks
-    html = html.replace(/\n/gim, '<br>');
-
-    return html;
-  }
-
-  /**
-   * Get markdown content from the editor
+   * Get markdown content from editor
    */
   getMarkdown(): string {
-    const doc = this._editor.state.doc;
-
-    // Use ProseMirror's markdown serializer
-    const markdown = defaultMarkdownSerializer.serialize(doc);
-
-    return markdown;
+    return this._editor.getMarkdown();
   }
 
   /**
-   * Set markdown content in the editor
+   * Set markdown content in editor
    */
   setMarkdown(markdown: string): void {
-    const html = this._markdownToHTML(markdown);
-    this._editor.commands.setContent(html);
+    this._editor.setMarkdown(markdown);
   }
 
   /**
    * Focus the editor
    */
   focus(): void {
-    this._editor.commands.focus();
+    this._editor.focus();
   }
 
   /**
-   * Dispose of the editor
+   * Dispose of the editor instance
    */
   dispose(): void {
-    this._editor.destroy();
+    if (!this._isDisposed) {
+      this._isDisposed = true;
+      this._editor.destroy();
+    }
   }
 }

@@ -1,5 +1,18 @@
 /*
-    See the JupyterLab Developer Guide for useful CSS Patterns:
+ * Base widget styles for JupyterLab integration
+ *
+ * Key lesson from TipTap: Don't fight Lumino's containment
+ * TOAST UI manages its own scrolling internally, so we don't need
+ * to override Lumino's inline styles
+ */
 
-    https://jupyterlab.readthedocs.io/en/stable/developer/css.html
-*/
+/* Remove white frame from parent Document widget */
+.jp-MainAreaWidget.jp-Document {
+  padding: 0;
+}
+
+/* Ensure our widget has clean borders/padding */
+.jp-Document .lm-Widget.jp-MarkdownEditor {
+  margin: 0;
+  border: 0;
+}

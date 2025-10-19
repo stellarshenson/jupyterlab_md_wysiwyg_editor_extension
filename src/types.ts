@@ -4,7 +4,7 @@
 
 import { DocumentRegistry } from '@jupyterlab/docregistry';
 import { ISignal } from '@lumino/signaling';
-import { Editor as TipTapEditor } from '@tiptap/core';
+import Editor from '@toast-ui/editor';
 
 /**
  * Interface for the markdown editor model
@@ -27,13 +27,13 @@ export interface IMarkdownEditorModel extends DocumentRegistry.ICodeModel {
 }
 
 /**
- * Interface for the TipTap editor wrapper
+ * Interface for the TOAST UI editor wrapper
  */
-export interface ITipTapEditorWrapper {
+export interface IToastEditorWrapper {
   /**
-   * The TipTap editor instance
+   * The TOAST UI editor instance
    */
-  readonly editor: TipTapEditor;
+  readonly editor: Editor;
 
   /**
    * Get markdown content from the editor

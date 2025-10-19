@@ -1,27 +1,30 @@
 /**
- * Markdown Editor Widget for JupyterLab
+ * Markdown Editor Widget for JupyterLab using TOAST UI Editor
  */
 
 import { DocumentRegistry, DocumentWidget } from '@jupyterlab/docregistry';
 import { Signal } from '@lumino/signaling';
 import { Widget } from '@lumino/widgets';
-import { TipTapEditorWrapper } from './editor';
+import { ToastEditorWrapper } from './editor';
 
 /**
  * The class name added to the markdown editor widget
  */
 const MARKDOWN_EDITOR_CLASS = 'jp-MarkdownEditor';
 const MARKDOWN_EDITOR_CONTENT_CLASS = 'jp-MarkdownEditor-content';
-const MARKDOWN_EDITOR_TOOLBAR_CLASS = 'jp-MarkdownEditor-toolbar';
 
 /**
- * A widget for markdown editing using TipTap
+ * A widget for markdown editing using TOAST UI Editor
+ *
+ * Key implementation notes based on TipTap lessons learned:
+ * - TOAST UI manages its own layout and scrolling (no CSS conflicts)
+ * - No custom toolbar needed (TOAST UI has built-in, we hide it)
+ * - Let TOAST UI control the editor container directly
  */
 export class MarkdownEditorWidget extends Widget {
-  private _editor: TipTapEditorWrapper | null = null;
+  private _editor: ToastEditorWrapper | null = null;
   private _model: DocumentRegistry.ICodeModel;
   private _context: DocumentRegistry.IContext<DocumentRegistry.ICodeModel>;
-  private _toolbar: Widget | null = null;
   private _contentChanged = new Signal<this, void>(this);
 
   constructor(
@@ -33,7 +36,7 @@ export class MarkdownEditorWidget extends Widget {
 
     this.addClass(MARKDOWN_EDITOR_CLASS);
 
-    // Create container structure
+    // Create simple container for TOAST UI
     this._setupLayout();
 
     // Initialize editor when context is ready
@@ -41,7 +44,7 @@ export class MarkdownEditorWidget extends Widget {
       this._initializeEditor();
     });
 
-    // Handle model changes
+    // Handle model changes (external edits)
     this._model.contentChanged.connect(this._onModelChanged, this);
 
     // Handle context path changes
@@ -64,23 +67,21 @@ export class MarkdownEditorWidget extends Widget {
 
   /**
    * Set up the widget layout
+   *
+   * Key lesson from TipTap: Keep it simple, let the editor control its container
    */
   private _setupLayout(): void {
-    // Create toolbar container
-    this._toolbar = new Widget();
-    this._toolbar.addClass(MARKDOWN_EDITOR_TOOLBAR_CLASS);
-
-    // Create editor content container
+    // Create single container for TOAST UI Editor
+    // TOAST UI will manage all internal layout
     const contentContainer = document.createElement('div');
     contentContainer.className = MARKDOWN_EDITOR_CONTENT_CLASS;
 
     // Add to widget
-    this.node.appendChild(this._toolbar.node);
     this.node.appendChild(contentContainer);
   }
 
   /**
-   * Initialize the TipTap editor
+   * Initialize the TOAST UI editor
    */
   private _initializeEditor(): void {
     const contentContainer = this.node.querySelector(
@@ -95,123 +96,23 @@ export class MarkdownEditorWidget extends Widget {
     // Get initial content from model
     const initialContent = this._model.sharedModel.getSource();
 
-    // Create editor wrapper
-    this._editor = new TipTapEditorWrapper({
+    // Create TOAST UI editor wrapper
+    // Key: Let TOAST UI manage everything internally
+    this._editor = new ToastEditorWrapper({
       host: contentContainer,
       content: initialContent,
       onUpdate: markdown => {
         this._onEditorUpdate(markdown);
       },
-      showToolbar: true
+      showToolbar: false // Not used by TOAST UI, kept for interface compatibility
     });
 
-    // Build toolbar
-    this._buildToolbar();
-
-    // Focus editor
-    this._editor.focus();
-  }
-
-  /**
-   * Build the toolbar with formatting buttons
-   */
-  private _buildToolbar(): void {
-    if (!this._editor || !this._toolbar) {
-      return;
-    }
-
-    const editor = this._editor.editor;
-
-    // Create toolbar buttons
-    const buttons = [
-      {
-        icon: 'ui-components:bold',
-        tooltip: 'Bold (Ctrl+B)',
-        command: () => editor.chain().focus().toggleBold().run(),
-        isActive: () => editor.isActive('bold')
-      },
-      {
-        icon: 'ui-components:italic',
-        tooltip: 'Italic (Ctrl+I)',
-        command: () => editor.chain().focus().toggleItalic().run(),
-        isActive: () => editor.isActive('italic')
-      },
-      {
-        icon: 'ui-components:strike',
-        tooltip: 'Strikethrough',
-        command: () => editor.chain().focus().toggleStrike().run(),
-        isActive: () => editor.isActive('strike')
-      },
-      {
-        icon: 'ui-components:code',
-        tooltip: 'Inline Code',
-        command: () => editor.chain().focus().toggleCode().run(),
-        isActive: () => editor.isActive('code')
-      },
-      {
-        icon: 'ui-components:list-ul',
-        tooltip: 'Bullet List',
-        command: () => editor.chain().focus().toggleBulletList().run(),
-        isActive: () => editor.isActive('bulletList')
-      },
-      {
-        icon: 'ui-components:list-ol',
-        tooltip: 'Numbered List',
-        command: () => editor.chain().focus().toggleOrderedList().run(),
-        isActive: () => editor.isActive('orderedList')
-      },
-      {
-        icon: 'ui-components:quote',
-        tooltip: 'Blockquote',
-        command: () => editor.chain().focus().toggleBlockquote().run(),
-        isActive: () => editor.isActive('blockquote')
-      },
-      {
-        icon: 'ui-components:code-block',
-        tooltip: 'Code Block',
-        command: () => editor.chain().focus().toggleCodeBlock().run(),
-        isActive: () => editor.isActive('codeBlock')
+    // Focus editor after initialization
+    setTimeout(() => {
+      if (this._editor) {
+        this._editor.focus();
       }
-    ];
-
-    // Add heading buttons
-    for (let level = 1; level <= 3; level++) {
-      buttons.push({
-        icon: 'ui-components:header',
-        tooltip: `Heading ${level}`,
-        command: () =>
-          editor.chain().focus().toggleHeading({ level: level as any }).run(),
-        isActive: () => editor.isActive('heading', { level })
-      });
-    }
-
-    // Create toolbar buttons (simplified for now - will enhance with JupyterLab UI components)
-    buttons.forEach(buttonConfig => {
-      const button = document.createElement('button');
-      button.className = 'jp-ToolbarButtonComponent';
-      button.title = buttonConfig.tooltip;
-      button.textContent = buttonConfig.tooltip.split(' ')[0];
-
-      button.onclick = () => {
-        buttonConfig.command();
-        this._updateToolbarState();
-      };
-
-      this._toolbar!.node.appendChild(button);
-    });
-
-    // Update toolbar state on editor updates
-    editor.on('selectionUpdate', () => {
-      this._updateToolbarState();
-    });
-  }
-
-  /**
-   * Update toolbar button states (active/inactive)
-   */
-  private _updateToolbarState(): void {
-    // This will be enhanced with proper active state styling
-    // For now, buttons work but don't show active state visually
+    }, 100);
   }
 
   /**
